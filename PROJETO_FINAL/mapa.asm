@@ -1,10 +1,9 @@
 .model small
-.stack 0100h
+.stack 100h
 
- .data
+.data
 mapa db '    0 1 2 3 4 5 6 7 8 9', 13, 10
      db '    _ _ _ _ _ _ _ _ _ _', 13, 10
-     db '   |_|_|_|_|_|_|_|_|_|_|', 13, 10
      db 'A  |_|_|_|_|_|_|_|_|_|_|', 13, 10
      db 'B  |_|_|_|_|_|_|_|_|_|_|', 13, 10
      db 'C  |_|_|_|_|_|_|_|_|_|_|', 13, 10
@@ -15,69 +14,90 @@ mapa db '    0 1 2 3 4 5 6 7 8 9', 13, 10
      db 'H  |_|_|_|_|_|_|_|_|_|_|', 13, 10
      db 'I  |_|_|_|_|_|_|_|_|_|_|', 13, 10
      db 'J  |_|_|_|_|_|_|_|_|_|_|', 13, 10
-     db '$' ; '$' indica o final da string para exibição com a função 09h do DOS
-
+     db '$'  ; $ indica o final da string para exibição com a função 09h do DOS
 
 .code
-main proc
-
-
+main:
+    ; Inicializa o segmento de dados
     mov ax, @data
-    mov ds, ax          ; Configura o segmento de dados
+    mov ds, ax
 
-    mov ah, 0           ; Modo de texto
+loop_inicio:
+    ; Exibir o mapa atual
+    call imprimir_mapa
+
+    ; Ler coordenadas do usuário
+    call ler_coordenadas
+
+    ; Verificar se o usuário deseja sair (pressionando 'q' ou 'Q')
+    cmp al, 'q'
+    je fim_programa
+    cmp al, 'Q'
+    je fim_programa
+
+    ; Atualizar o mapa com a coordenada fornecida
+    call atualizar_mapa
+
+    ; Voltar para o início do loop
+    jmp loop_inicio
+
+fim_programa:
+    ; Sair do programa
+    mov ah, 4Ch
+    int 21h
+
+; Função para imprimir o mapa
+imprimir_mapa:
+
+    mov ah, 0
     mov al, 3
     int 10h
 
-    call imprimir_mapa  ; Exibir o mapa inicial
-
-    ; Solicitar coordenadas do usuário e atualizar o mapa
-    call ler_coordenadas
-    call atualizar_mapa
-    call imprimir_mapa  ; Exibir o mapa atualizado
-
-    ; Fim do programa
-    mov ah, 4Ch         ; Função para sair do programa
-    int 21h             ; Chama a interrupção do DOS
-
-main endp
-
-; Procedimento para imprimir o mapa
-imprimir_mapa proc
     mov ah, 09h
-    mov dx, offset mapa
+    lea dx, mapa
     int 21h
     ret
-imprimir_mapa endp
 
-; Procedimento para ler coordenadas do usuário
-ler_coordenadas proc
-    ; Ler a letra (A-E)
+; Função para ler as coordenadas do usuário
+ler_coordenadas:
+    ; Ler a letra (A-J) da linha
     mov ah, 01h
     int 21h
-    sub al, 'A'         ; Converte a letra para um índice (0-4)
-    mov bl, al          ; Armazena a linha em BL
+    sub al, 'A'           ; Converte para índice (0-9)
 
-    ; Ler o número (0-4)
+    ; Armazenar no registrador BL a linha (0-9)
+    mov bl, al
+
+    ; Ler o número (0-9) da coluna
     mov ah, 01h
     int 21h
-    sub al, '0'         ; Converte o número para um índice (0-4)
-    mov bh, al          ; Armazena a coluna em BH
-    ret
-ler_coordenadas endp
+    sub al, '0'           ; Converte para índice (0-9)
 
-; Procedimento para atualizar o mapa com um barco na posição do usuário
-atualizar_mapa proc
-    ; Calcular a posição no mapa com base em BL (linha) e BH (coluna)
-    mov ax, bx          ; Carrega a linha em AX
-    mov cx, 26          ; Cada linha ocupa 26 bytes no mapa (5 células com bordas)
-    mul cx              ; AX = linha * largura da linha
-    add ax, bx          ; Adiciona a coluna
-    shl ax, 1           ; Multiplica por 2 (cada célula é 2 bytes devido às bordas)
-    add ax, offset mapa ; Adiciona o endereço base do mapa
-
-    ; Substitui o espaço vazio por 'x' (marcação do barco)
+    ; Armazenar no registrador BH a coluna (0-9)
+    mov bh, al
     ret
-atualizar_mapa endp
+
+atualizar_mapa:
+    ; Calcular o deslocamento da linha: cada linha ocupa 24 caracteres no total
+    mov al, bl            ; Linha (0-9) está em BL
+    mov ah, 0             ; Limpar AH para multiplicação
+    mov cx, 24            ; Cada linha ocupa 24 caracteres
+    mul cx                ; Multiplica a linha pelo tamanho total da linha, resultado em AX
+
+    ; Adicionar a posição base da linha para a primeira coluna
+    add ax, 4             ; Começar na posição [2,2] para a primeira célula em cada linha
+
+    ; Calcular o deslocamento da coluna: cada coluna se move duas posições para a direita
+    mov cl, bh            ; Coluna (0-9) está em BH
+    shl cl, 1             ; Multiplica coluna por 2 (salto de 2 caracteres por coluna)
+    add ax, cx            ; Soma o deslocamento da coluna ao endereço
+
+    ; Calcular o endereço final no mapa
+    lea si, mapa          ; Carrega o endereço base do mapa em SI
+    add si, ax            ; Soma o índice calculado em AX ao endereço base
+
+    ; Substituir o caractere no mapa por 'X' (marcando a posição)
+    mov byte ptr [si], 'X'
+    ret
 
 end main
