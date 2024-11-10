@@ -48,11 +48,6 @@ fim_programa:
 
 ; Função para imprimir o mapa
 imprimir_mapa:
-
-    mov ah, 0
-    mov al, 3
-    int 10h
-
     mov ah, 09h
     lea dx, mapa
     int 21h
@@ -85,7 +80,12 @@ atualizar_mapa:
     mul cx                ; Multiplica a linha pelo tamanho total da linha, resultado em AX
 
     ; Adicionar a posição base da linha para a primeira coluna
-    add ax, 4             ; Começar na posição [2,2] para a primeira célula em cada linha
+    add ax, 54             ; Começar na posição [2,2] para a primeira célula em cada linha
+
+    ; Ajuste adicional para cada nova linha, incrementando em 2 sucessivamente
+    mov cl, bl            ; Copia o valor de bl para cl
+    shl cl, 1             ; Multiplica cl por 2 para incrementos de 2, 4, 6, etc.
+    add ax, cx            ; Incrementa o deslocamento da linha em múltiplos de 2
 
     ; Calcular o deslocamento da coluna: cada coluna se move duas posições para a direita
     mov cl, bh            ; Coluna (0-9) está em BH
