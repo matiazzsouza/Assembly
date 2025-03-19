@@ -12,7 +12,8 @@ O conteúdo está dividido em:
     Objetivo
 
 Este diretório serve para documentar os exercícios de Assembly realizados durante os estudos. O objetivo é proporcionar uma base sólida de conhecimento sobre o funcionamento de sistemas em nível de hardware, onde o controle direto dos recursos da máquina é essencial.
-Tecnologias Utilizadas
+
+Tecnologias Utilizadas:
 
     Assembly x86
     NASM (Netwide Assembler)
